@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0E1416">
+<title>لوحة إدارة الصرافة وشام كاش</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;700;800&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- الشريط العلوي: الشعار + حالة الاتصال/المزامنة + زر التثبيت    -->
+<!-- ============================================================ -->
+<header class="topbar">
+  <div class="topbar__brand">
+    <span class="brand__mark">NEXA</span>
+    <div class="brand__text">
+      <strong>مكتب الصرافة</strong>
+      <small>لوحة تحكم داخلية</small>
+    </div>
+  </div>
+
+  <div class="topbar__actions">
+    <button id="btnInstallApp" class="btn btn--gold btn--install" hidden title="تثبيت التطبيق على الجهاز">
+      <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 3v10.59l3.3-3.3 1.4 1.42L12 17.41l-4.7-4.7 1.4-1.42 3.3 3.3V3h2zM5 19h14v2H5z"/></svg>
+      تثبيت التطبيق
+    </button>
+    <button id="badgeConn" class="badge badge--ok" title="حالة الاتصال بالإنترنت">
+      <i class="dot"></i><span id="badgeConnText">متصل</span>
+    </button>
+    <button id="badgeSync" class="badge badge--muted" title="حالة المزامنة مع تيليجرام">
+      <i class="dot"></i><span id="badgeSyncText">متزامن</span>
+    </button>
+  </div>
+</header>
+
+<main class="dashboard">
+
+  <!-- ============================================================ -->
+  <!-- بطاقات الإحصائيات (KPI) — تبقى ظاهرة دائماً فوق كل التبويبات -->
+  <!-- ============================================================ -->
+  <section class="kpi-row" aria-label="ملخص اليوم">
+    <div class="kpi-card kpi-card--sc">
+      <span class="kpi-card__label">سحوبات شام كاش اليوم</span>
+      <span class="kpi-card__value" id="kpiShamcashTotal">0</span>
+      <span class="kpi-card__unit">ل.س</span>
+    </div>
+    <div class="kpi-card kpi-card--fx">
+      <span class="kpi-card__label">عدد عمليات الصرافة اليوم</span>
+      <span class="kpi-card__value" id="kpiFxCount">0</span>
+      <span class="kpi-card__unit">عملية بكل العملات</span>
+    </div>
+    <div class="kpi-card kpi-card--profit">
+      <span class="kpi-card__label">صافي الربح المحقق اليوم</span>
+      <span class="kpi-card__value" id="kpiProfitTotal">0</span>
+      <span class="kpi-card__unit">ل.س</span>
+      <div class="kpi-card__breakdown">
+        <span>صرافة: <b id="kpiProfitFx">0</b></span>
+        <span>شام كاش: <b id="kpiProfitSc">0</b></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- المحفظة الحالية — رصيد كل عملة، متوسط التكلفة، والربح النظري -->
+  <!-- ============================================================ -->
+  <section class="panel portfolio-panel" aria-label="المحفظة الحالية">
+    <div class="panel__head">
+      <h2>المحفظة الحالية</h2>
+      <div class="panel__head-actions">
+        <button id="btnOpenInventoryAdjust" class="btn btn--ghost btn--sm">جرد وتصحيح الصندوق</button>
+      </div>
+    </div>
+    <div class="portfolio-grid" id="portfolioGrid">
+      <!-- تُملأ ديناميكياً لكل عملة: الرصيد، متوسط التكلفة، الربح/الخسارة النظرية -->
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- شريط التبويبات                                                -->
+  <!-- ============================================================ -->
+  <nav class="tabs" id="tabsNav" aria-label="أقسام النظام">
+    <button class="tabs__btn is-active" data-tab="sc">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M17 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm0 18H7v-1h10v1zm0-3H7V5h10v12z"/></svg>
+      شام كاش
+    </button>
+    <button class="tabs__btn" data-tab="fx">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm3.5 6h-2.32c-.16-.68-.9-1-1.52-1-.9 0-1.5.4-1.5 1 0 .7.7.95 1.75 1.24C13.3 9.6 15 10.15 15 12.1c0 1.4-1.05 2.35-2.5 2.6V16h-1v-1.3c-1.35-.2-2.4-1-2.5-2.5h2.32c.1.65.65 1.1 1.5 1.1.9 0 1.5-.4 1.5-1 0-.65-.65-.9-1.9-1.25C10.9 10.5 9.1 9.9 9.1 8c0-1.35 1.05-2.25 2.4-2.5V4.2h1v1.3c1.3.25 2.2 1.1 2.3 2.5z"/></svg>
+      الصرافة
+    </button>
+    <button class="tabs__btn" data-tab="log">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M4 4h16v2H4V4zm0 7h16v2H4v-2zm0 7h16v2H4v-2z"/></svg>
+      السجل اليومي
+    </button>
+    <button class="tabs__btn" data-tab="settings">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19.14 12.94a7.14 7.14 0 0 0 .06-.94 7.14 7.14 0 0 0-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.3 7.3 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.14.56-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.62-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.14.24.42.32.6.22l2.39-.96c.49.38 1.04.7 1.63.94l.36 2.54a.5.5 0 0 0 .5.42h3.84a.5.5 0 0 0 .5-.42l.36-2.54c.59-.24 1.14-.56 1.63-.94l2.39.96c.24.1.46 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2"/></svg>
+      الإعدادات والتقفيل
+    </button>
+  </nav>
+
+  <!-- ============================================================ -->
+  <!-- تبويب: حاسبة شام كاش                                          -->
+  <!-- ============================================================ -->
+  <section class="tab-panel is-active" id="tabPanel-sc" data-panel="sc">
+    <div class="panel calc-panel calc-panel--sc">
+      <div class="panel__head">
+        <h2>حاسبة شام كاش</h2>
+        <span class="panel__tag">سحب إلكتروني</span>
+      </div>
+
+      <div class="field">
+        <label for="scAmount">المبلغ المسحوب (ل.س)</label>
+        <input type="number" id="scAmount" inputmode="decimal" placeholder="0">
+      </div>
+
+      <div class="field">
+        <label for="scCommission">نسبة العمولة (%)</label>
+        <input type="number" id="scCommission" inputmode="decimal" step="0.1" placeholder="1.5">
+      </div>
+
+      <div class="calc-result">
+        <div class="calc-result__row calc-result__row--main">
+          <span>الصافي الواجب تسليمه للزبون</span>
+          <b id="scNetToCustomer">0</b>
+        </div>
+        <div class="calc-result__row calc-result__row--profit">
+          <span>ربح الصراف (ل.س)</span>
+          <b id="scProfitSyp">0</b>
+        </div>
+        <div class="calc-result__row calc-result__row--profit">
+          <span>ربح الصراف (USD تقريبي)</span>
+          <b id="scProfitUsd">0</b>
+        </div>
+      </div>
+
+      <button id="btnSaveSc" class="btn btn--primary btn--block">حفظ العملية (Enter)</button>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- تبويب: حاسبة الصرافة (مبنية على محرك المخزون WAC)            -->
+  <!-- ============================================================ -->
+  <section class="tab-panel" id="tabPanel-fx" data-panel="fx">
+    <div class="panel calc-panel">
+      <div class="panel__head">
+        <h2>حاسبة الصرافة</h2>
+        <div class="segmented" id="fxMode">
+          <button class="segmented__btn is-active" data-mode="buy">شراء من زبون</button>
+          <button class="segmented__btn" data-mode="sell">مبيع لزبون</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="fxCurrency">العملة</label>
+        <select id="fxCurrency" class="select-input">
+          <option value="USD">دولار أمريكي (USD)</option>
+          <option value="TRY">ليرة تركية (TRY)</option>
+          <option value="EUR">يورو (EUR)</option>
+          <option value="SAR">ريال سعودي (SAR)</option>
+        </select>
+      </div>
+
+      <!-- معلومات المركز الحالي لهذه العملة، لمساعدة الصراف على فهم قراره -->
+      <div class="position-info" id="fxPositionInfo">
+        <span>رصيدك الحالي: <b id="fxPosBalance">0</b></span>
+        <span>متوسط تكلفتك: <b id="fxPosAvgCost">0</b> ل.س</span>
+      </div>
+
+      <div class="field">
+        <label for="fxAmount">المبلغ</label>
+        <input type="number" id="fxAmount" inputmode="decimal" placeholder="0.00">
+      </div>
+
+      <div class="calc-result">
+        <div class="calc-result__row">
+          <span>السعر المستخدم</span>
+          <b id="fxRateUsed">0</b>
+        </div>
+        <div class="calc-result__row calc-result__row--main">
+          <span id="fxResultLabel">المبلغ الواجب دفعه للزبون</span>
+          <b id="fxResultAmount">0</b>
+        </div>
+        <!-- تظهر عند الشراء فقط: لا يوجد ربح عند الشراء، فقط تحديث لمتوسط التكلفة -->
+        <div class="calc-result__row calc-result__row--cost" id="fxNewAvgCostRow">
+          <span>متوسط التكلفة الجديد بعد هذه العملية</span>
+          <b id="fxNewAvgCost">0</b>
+        </div>
+        <!-- تظهر عند البيع فقط: الربح المحقق الفعلي بناءً على متوسط التكلفة -->
+        <div class="calc-result__row calc-result__row--profit" id="fxProfitRow" hidden>
+          <span>الربح المحقق (بناءً على متوسط التكلفة)</span>
+          <b id="fxSpreadProfit">0</b>
+        </div>
+      </div>
+
+      <button id="btnSaveFx" class="btn btn--primary btn--block">حفظ العملية (Enter)</button>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- تبويب: السجل اليومي                                          -->
+  <!-- ============================================================ -->
+  <section class="tab-panel" id="tabPanel-log" data-panel="log">
+    <div class="panel log-panel">
+      <div class="panel__head">
+        <h2>سجل العمليات اليومي</h2>
+        <div class="segmented" id="logFilter">
+          <button class="segmented__btn is-active" data-filter="all">الكل</button>
+          <button class="segmented__btn" data-filter="fx">الصرافة فقط</button>
+          <button class="segmented__btn" data-filter="sc">شام كاش فقط</button>
+        </div>
+      </div>
+
+      <div class="log-export-row">
+        <button id="btnExportCsv" class="btn btn--ghost">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+          تصدير Excel / CSV
+        </button>
+        <button id="btnExportPdf" class="btn btn--ghost">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zM9 17H7v-2h2v2zm0-4H7v-2h2v2zm0-4H7V7h2v2zm4 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2zm4 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2z"/></svg>
+          تصدير / طباعة تقرير PDF
+        </button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="log-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>الوقت</th>
+              <th>القسم</th>
+              <th>العملة</th>
+              <th>التفاصيل</th>
+              <th>السعر / النسبة</th>
+              <th>الكاش المسلَّم</th>
+              <th>الربح / التكلفة</th>
+              <th>الحالة</th>
+              <th>إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="logTableBody">
+            <!-- تُملأ ديناميكياً عبر script.js -->
+          </tbody>
+        </table>
+        <div id="logEmptyState" class="empty-state" hidden>
+          <p>لا توجد عمليات مسجلة بعد. أول عملية تحفظها ستظهر هنا.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- تبويب: الإعدادات والتقفيل                                     -->
+  <!-- ============================================================ -->
+  <section class="tab-panel" id="tabPanel-settings" data-panel="settings">
+
+    <!-- أسعار صرف العملات -->
+    <div class="panel">
+      <div class="panel__head"><h2>أسعار صرف العملات</h2></div>
+      <div class="rates-grid" id="ratesGrid">
+        <!-- تُملأ ديناميكياً لكل عملة: دولار / ليرة تركية / يورو / ريال سعودي -->
+      </div>
+      <button id="btnSaveRates" class="btn btn--gold btn--block">حفظ كل الأسعار</button>
+    </div>
+
+    <!-- الرصيد الافتتاحي / تصحيح المخزون -->
+    <div class="panel">
+      <div class="panel__head"><h2>الرصيد الافتتاحي ومتوسط التكلفة</h2></div>
+      <p class="hint">استخدم هذا لإدخال رصيدك الحالي الفعلي بكل عملة ومتوسط تكلفته عند أول استخدام للنظام، أو لتصحيحه لاحقاً بعد أي جرد يدوي للصندوق.</p>
+      <button id="btnOpenInitialCapital" class="btn btn--ghost btn--block">فتح شاشة الرصيد الافتتاحي</button>
+    </div>
+
+    <!-- حجم ورق الطابعة الحرارية -->
+    <div class="panel">
+      <div class="panel__head"><h2>حجم ورق طباعة الإيصال</h2></div>
+      <div class="segmented" id="printSizeToggle">
+        <button class="segmented__btn is-active" data-size="80">80mm</button>
+        <button class="segmented__btn" data-size="58">58mm</button>
+      </div>
+    </div>
+
+    <!-- إعدادات تيليجرام -->
+    <div class="panel">
+      <div class="panel__head"><h2>إعدادات تيليجرام</h2></div>
+      <div class="field">
+        <label for="tgBotToken">Bot Token</label>
+        <input type="text" id="tgBotToken" placeholder="123456789:ABC-Def...">
+      </div>
+      <div class="field">
+        <label for="tgChatId">Chat ID</label>
+        <input type="text" id="tgChatId" placeholder="-1001234567890">
+      </div>
+      <p class="hint">تُستخدم هذه البيانات لإرسال إشعار فوري عند حفظ كل عملية، ولإرسال تقرير التقفيل اليومي. تُحفظ محلياً على هذا الجهاز فقط.</p>
+      <button id="btnTestTelegram" class="btn btn--ghost btn--block">إرسال رسالة تجريبية</button>
+      <button id="btnSaveSettings" class="btn btn--primary btn--block">حفظ إعدادات تيليجرام</button>
+    </div>
+
+    <!-- النسخ الاحتياطي اليدوي -->
+    <div class="panel">
+      <div class="panel__head"><h2>النسخ الاحتياطي اليدوي</h2></div>
+      <p class="hint">احفظ نسخة من كل بياناتك (العمليات، المحفظة، الأسعار، الإعدادات) في ملف على جهازك، أو استعِدها على أي جهاز آخر.</p>
+      <button id="btnExportBackup" class="btn btn--ghost btn--block">تصدير نسخة احتياطية (JSON)</button>
+      <label for="fileImportBackup" class="btn btn--ghost btn--block file-input-label">
+        استيراد نسخة احتياطية (JSON)
+      </label>
+      <input type="file" id="fileImportBackup" accept="application/json" hidden>
+    </div>
+
+    <!-- تقفيل اليوم -->
+    <div class="panel">
+      <div class="panel__head"><h2>تقفيل اليوم وإرسال التقرير</h2></div>
+      <p class="hint" id="lastClosingHint">لم يتم تقفيل أي يوم بعد على هذا الجهاز.</p>
+      <button id="btnDailyClosing" class="btn btn--gold btn--block">تقفيل اليوم وإرسال التقرير عبر تيليجرام</button>
+    </div>
+
+  </section>
+
+</main>
+
+<!-- ============================================================ -->
+<!-- نافذة الرصيد الافتتاحي / تصحيح الجرد — تُستخدم للحالتين معاً  -->
+<!-- ============================================================ -->
+<div id="capitalModal" class="modal-overlay" hidden>
+  <div class="modal">
+    <div class="modal__head">
+      <h3 id="capitalModalTitle">الرصيد الافتتاحي لكل عملة</h3>
+      <button id="btnCloseCapitalModal" class="icon-btn" title="إغلاق">✕</button>
+    </div>
+    <div class="modal__body" id="capitalModalGrid">
+      <!-- تُملأ ديناميكياً: لكل عملة كمية + متوسط تكلفة -->
+    </div>
+    <div class="modal__foot">
+      <button id="btnSaveCapitalModal" class="btn btn--primary btn--block">حفظ الرصيد</button>
+    </div>
+  </div>
+</div>
+
+<!-- تنبيه صغير أعلى الشاشة (Toast) -->
+<div id="toast" class="toast" hidden></div>
+
+<!-- منطقة طباعة إيصال حراري — مخفية على الشاشة، تظهر فقط عند الطباعة -->
+<div id="receiptPrintArea" class="print-only receipt-80"></div>
+
+<!-- منطقة طباعة تقرير PDF كامل — مخفية على الشاشة، تظهر فقط عند الطباعة -->
+<div id="reportPrintArea" class="print-only"></div>
+
+<!-- ============================================================ -->
+<!-- تذييل الصفحة: بيانات المبرمج                                  -->
+<!-- ضع هنا اسمك ورقم هاتفك أو رقم واتساب التواصل                 -->
+<!-- ============================================================ -->
+<!-- <footer class="app-footer">
+  <span class="app-footer__credit">
+    تصميم وبرمجة: <b id="devName">اسم المبرمج هنا</b>
+    <span class="app-footer__sep">•</span>
+    للتواصل: <b id="devPhone" dir="ltr">00963-XXX-XXXX</b>
+  </span>
+</footer> -->
+
+<!-- HTML -->
+<footer class="app-footer">
+  <div class="app-footer__container">
+    <span class="app-footer__credit">
+      تصميم وبرمجة: <strong id="devName" class="app-footer__author">م.البراء عمر</strong>
+    </span>
+    <span class="app-footer__sep">•</span>
+    <a href="https://wa.me/963930621982?text=%D9%85%D8%B1%D8%AD%D8%A8%D8%A7%D9%8B%D8%8C%20%D8%A3%D8%B1%D8%BA%D8%A8%20%D9%81%D9%8A%20%D8%A7%D9%84%D8%A7%D8%B3%D8%AA%D9%81%D8%B3%D8%A7%D8%B1%20%D8%B9%D9%86%20%D8%A7%D9%84%D8%AA%D8%B7%D8%A0%D9%8A%D9%82" 
+       id="devPhone" 
+       class="app-footer__whatsapp-btn" 
+       target="_blank" 
+       rel="noopener noreferrer" 
+       dir="ltr">
+      <svg class="app-footer__wa-icon" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+      </svg>
+      <span>00963930621982</span>
+    </a>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
