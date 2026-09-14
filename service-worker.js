@@ -5,16 +5,15 @@
    وهذا قيد من المتصفح نفسه وليس خللاً في الكود.
    ============================================================ */
 
-const CACHE_NAME = "shamcash-exchange-cache-v2";
+const CACHE_NAME = "shamcash-exchange-cache-v3";
 const CORE_FILES = [
   "./",
   "./index.html",
   "./style.css",
   "./script.js",
   "./manifest.json",
-  "./icons/icon-192.svg",
-  "./icons/icon-512.svg",
-  "./icons/icon.svg",
+  "./icon-192.png",
+  "./icon-512.png",
 ];
 
 self.addEventListener("install", (event) => {

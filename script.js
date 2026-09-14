@@ -8,7 +8,7 @@
    0) إعدادات عامة — عدّل رقم الواتساب هنا فقط
    ------------------------------------------------------------ */
 // رقم الواتساب الدولي بدون علامة + وبدون 00 في البداية (مثال سوريا: 963991234567)
-const WHATSAPP_NUMBER = "+963930621982";
+const WHATSAPP_NUMBER = "963930621982";
 
 const TRIAL_DURATION_MS = 72 * 60 * 60 * 1000; // 72 ساعة = 3 أيام
 const LS_KEY_FIRST_RUN = "exchangeSys_firstRunTime";
@@ -1121,7 +1121,12 @@ function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
   // يفشل التسجيل بصمت عند الفتح المباشر من القرص (file://) أو بدون خادم،
   // وهذا قيد من المتصفح نفسه ولا يؤثر على عمل باقي التطبيق أوفلاين.
-  navigator.serviceWorker.register("service-worker.js").catch(() => {});
+  navigator.serviceWorker.register("service-worker.js").catch(() => {
+    // التثبيت لا يعمل من file:// أو من دون HTTPS/localhost.
+    if (location.protocol === "file:") {
+      showToast("افتح التطبيق عبر localhost أو HTTPS لتفعيل التثبيت", true);
+    }
+  });
 }
 
 function setupInstallPrompt() {
@@ -1138,11 +1143,25 @@ function setupInstallPrompt() {
   });
 
   els.btnInstallApp.addEventListener("click", async () => {
-    if (!deferredInstallPrompt) return;
-    deferredInstallPrompt.prompt();
-    await deferredInstallPrompt.userChoice;
+    if (!deferredInstallPrompt) {
+      showToast("التثبيت غير متاح حالياً. افتح التطبيق عبر HTTPS أو localhost", true);
+      return;
+    }
+    const installPrompt = deferredInstallPrompt;
     deferredInstallPrompt = null;
-    els.btnInstallApp.hidden = true;
+    try {
+      await installPrompt.prompt();
+      const choice = await installPrompt.userChoice;
+      if (choice.outcome === "accepted") {
+        els.btnInstallApp.hidden = true;
+      } else {
+        els.btnInstallApp.hidden = true;
+        showToast("تم إلغاء التثبيت. أعد فتح الصفحة للمحاولة مجدداً", true);
+      }
+    } catch (error) {
+      els.btnInstallApp.hidden = true;
+      showToast("تعذر فتح نافذة التثبيت. أعد تحميل الصفحة وحاول مجدداً", true);
+    }
   });
 }
 
