@@ -5,7 +5,7 @@
    وهذا قيد من المتصفح نفسه وليس خللاً في الكود.
    ============================================================ */
 
-const CACHE_NAME = "shamcash-exchange-cache-v3";
+const CACHE_NAME = "shamcash-exchange-cache-v4";
 const CORE_FILES = [
   "./",
   "./index.html",
@@ -18,7 +18,22 @@ const CORE_FILES = [
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_FILES))
+    caches.open(CACHE_NAME).then((cache) => {
+      /* مهم جداً: لا نستخدم cache.addAll() هنا، لأنها "الكل أو لا شيء" —
+         لو تعذّر تحميل ملف واحد فقط من القائمة (اسم بحرف مختلف، رفع
+         ناقص على الاستضافة، مسار خاطئ...)، فإن التثبيت بأكمله يفشل
+         بصمت ولا يُفعَّل الـ Service Worker إطلاقاً، وبالتالي لا يظهر
+         خيار "تثبيت التطبيق" أبداً حتى لو كان الموقع يعمل عبر HTTPS
+         بشكل طبيعي تماماً. لذلك نخزّن كل ملف على حدة، ونتجاهل أي ملف
+         فشل تحميله دون أن يوقف تفعيل الـ Service Worker بقية الملفات. */
+      return Promise.allSettled(
+        CORE_FILES.map((file) =>
+          cache.add(file).catch((err) => {
+            console.warn("[service-worker] تعذّر تخزين الملف:", file, err);
+          })
+        )
+      );
+    })
   );
   self.skipWaiting();
 });
